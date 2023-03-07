@@ -33,6 +33,66 @@ The last strategy on the parallelization is actually a crucial step to leverage 
 Polars also allow to load larger data that doesn't fir into memory with it's streaming capabilities. A simple `collect(streaming=True)` is enough to run the slower but still fast streaming query.
 
 # Installation
+The python package for polars gets installed like any other. I prefer for my experimentations to [create a python virtual environment](https://docs.python.org/3/library/venv.html) first instead of install them globally (but this step is optional). For that, you need to run these commands in your project folder (you can refer to the documentation if the `source` activate line doesn't work because you're using a windows shell):
+```python
+python3 -m venv venv_folder  # create a virtual environment folder containing a python interpreter and packages
+
+# activate the virtual environment making the new interpreter and its path the default for your terminal
+source venv_folder/bin/activate # for UNIX systems
+## OR
+# source venv_folder/Script/activate # for Windows Systems
+```
+
+The virtual environment created and activated, you can install your package with python classic package installer.
+```python
+pip install polars
+```
+There also are [optionnal dependancies](https://pypi.org/project/polars/) you can install polars with.
+```python
+pip install polars[all] # install all dependancies
+pip install polars[pandas, numpy, timezone] # install subset of optionnal dependancies
+```
+
+# Series, Dataframes & Lazyframes
+Polars offers 3 types of data structures, 2 common and an extra one.
+* `Series` are one dimension arrays able to store multiple types of values. Just as Pandas or Numpy. They can be created with a list or a tuple where the key will be a string that label it.
+```python
+s = pl.Series("a", [1, 2, 3])
+s
+```
+    shape: (3,)
+    Series: 'a' [i64]
+    [
+            1
+            2
+            3
+    ]
+
+* `Dataframes` are two dimension tables (with both lines and columns). Each column have a single type and is independant from others types. They can be created from `dicts` or a list of typed Series for example. They are also created on the execution of the `.read_*` method where `*` represent a supported file type.
+```python
+data = {"a": [1, 2], "b": [3, 4]}
+df = pl.DataFrame(data)
+df
+```
+    shape: (2, 2)
+    ┌─────┬─────┐
+    │ a   ┆ b   │
+    │ --- ┆ --- │
+    │ i64 ┆ i64 │
+    ╞═════╪═════╡
+    │ 1   ┆ 3   │
+    │ 2   ┆ 4   │
+    └─────┴─────┘
+
+* `Lazyframes` are a representation of a Lazy query against a Dataframe. It's the data structure allowing query optimisation and parallelization that makes the strength of Polars. They are created from the `.lazy` method on a dataframe or a `.scan_*` method where `*` represent a supported file type.
+```python
+data = {"a": [1, 2], "b": [3, 4]}
+ldf = pl.LazyFrame(data)
+print(ldf)
+```
+    naive plan: (run LazyFrame.explain(optimized=True) to see the optimized plan)
+
+    DF ["a", "b"]; PROJECT */2 COLUMNS; SELECTION: "None"
 
 # Theory
 
