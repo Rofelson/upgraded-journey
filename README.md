@@ -94,7 +94,94 @@ print(ldf)
 
     DF ["a", "b"]; PROJECT */2 COLUMNS; SELECTION: "None"
 
-# Theory
+# Syntaxic snack
+Here we'll see some Polars-y ways to manipulate our dataframes. Quick reminder :
+> If your Polars code looks like it could be Pandas code, it might run, but it likely runs slower than it should.
+## Selecting data
+Polars doesn't have index so it cannot locate precise cells of the dateframe. It is strongly advised to use the expression API to select a specific column based on it's label. 
+```python
+df.select(["label_one"])
+```
+Row selection is preferred to be based on their value using the `.filter` method.
+```python
+df.filter(pl.col("col_label") < 10)
+```
+These operation can be optimized and parallelized by Polars.
+
+## Accept the laziness
+Always prefer a lazy evaluation of the query either implicitly by using the `scan_csv` function or explicitly by using the `lazy` function.
+```python
+df = pl.scan_csv(csv_file)
+grouped_df = df.groupby('id1').agg(pl.col('v1').sum()).collect()
+```
+
+## Column manipulation
+### Assignement
+We use the `.with_columns` method to recompute a value based on other columns and label the result with the `.alias` method.
+```python
+df.with_columns([
+    (round((pl.col("ratio")*100),2)).alias("percentage"),
+    (pl.col("distance_meter") * 1000).alias("distance_mm"),
+])
+```
+### Conditional assignment
+Three methods are used to specify conditions of calculation : `.when`, `.then` and `.otherwise`. These pure methods do not modify the original dataframe and allow to parallelize the evaluation of all the branches.
+```python
+df.with_columns(
+    pl.when(pl.col("hapiness") < 6)
+    .then(pl.col("sweet_beverage"))
+    .otherwise(pl.col("sour_beverage")).alias("beverage_choice")
+)
+```
+
+### Filtering
+Just pass a boolean expression to the `.filter` method on specified columns. The query optimizer can combine them in a single optimized plan
+```python
+df.filter(
+    (pl.col("m2_living") > 2500) & (pl.col("price") < 300000)
+)
+```
+
+### Deleting a column
+It is as simple as calling the `.drop` method on either a Dataframe or a Lazyframe.
+```python
+df = pl.DataFrame(
+    {
+        "foo": [1, 2, 3],
+        "bar": [6.0, 7.0, 8.0],
+        "ham": ["a", "b", "c"],
+    }
+)
+df.drop("ham")
+```
+    shape: (3, 2)
+    ┌─────┬─────┐
+    │ foo ┆ bar │
+    │ --- ┆ --- │
+    │ i64 ┆ f64 │
+    ╞═════╪═════╡
+    │ 1   ┆ 6.0 │
+    │ 2   ┆ 7.0 │
+    │ 3   ┆ 8.0 │
+    └─────┴─────┘
+# Missing data
+For Polars, missing data is only represented as `null` value. An exception made for float column where `NaN` values are permited but only as a special floating point value.
+There are three ways to ensure your missing data are represented in your dataframe.
+- Use the `null_values` parameter to provide a string, a list of strings or a dictionnary of column label and associated null values.
+    ```python
+    pl.read_csv("data.csv",
+            null_values="NULL",
+            # infer_schema_length=0,  # optional (if you get a parsing error)
+            )
+    ```
+- Perform a conditionnal assignment to detect the sentinel values. It's good to know that the `.otherwise` method defaults to `null`
+    ```python
+    df.with_columns(
+        pl.when(pl.col(pl.Utf8) != "NULL") # detect NULL string in Utf8 typed columns
+            .then(pl.col(pl.Utf8)) # keep original value if not null value. Otherwise is None by default
+            .keep_name() # keep the name of the column
+    )
+    ```
 
 # Practical example
 
