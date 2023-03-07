@@ -184,10 +184,232 @@ There are three ways to ensure your missing data are represented in your datafra
     ```
 
 # Practical example
+To practice using this library, we'll use a dataset scrapped from the imdb website. We'll work the polars way with the Lazy API.
 
-# alternatives
+We'll obviously start by importing library and loading the CSV file
+```python
+import polars as pl
+lf = pl.scan_csv("imdb_votes_2017.csv")
+```
+To get an idea of the data we have to work with, we'll display the first lines of the computed Lazyframe using the `.fetch` method instead of `.collect`. It allows us to specify the number of rows we want to preview for a quick debug process, and really shines on large datasets.
+```python
+lf.fetch(5) # use fetch instead of collect to get a dataframe to not run query on whole data
+```
+    shape: (5, 10)
+    ┌────────────┬────────────┬───────────┬────────────┬─────┬──────────┬──────┬────────────┬───────────┐
+    │ web-scrape ┆ web-scrape ┆ films_ite ┆ films_item ┆ ... ┆ Realisat ┆ Note ┆ Number_of_ ┆ Metascore │
+    │ r-order    ┆ r-start-ur ┆ ms        ┆ s-href     ┆     ┆ or       ┆ ---  ┆ views      ┆ ---       │
+    │ ---        ┆ l          ┆ ---       ┆ ---        ┆     ┆ ---      ┆ f64  ┆ ---        ┆ str       │
+    │ str        ┆ ---        ┆ str       ┆ str        ┆     ┆ str      ┆      ┆ str        ┆           │
+    │            ┆ str        ┆           ┆            ┆     ┆          ┆      ┆            ┆           │
+    ╞════════════╪════════════╪═══════════╪════════════╪═════╪══════════╪══════╪════════════╪═══════════╡
+    │ 1676580318 ┆ https://ww ┆ Shot      ┆ https://ww ┆ ... ┆ Ric      ┆ 7.3  ┆ 89K        ┆ 59        │
+    │ -51        ┆ w.imdb.com ┆ Caller    ┆ w.imdb.com ┆     ┆ Roman    ┆      ┆            ┆           │
+    │            ┆ /search/ti ┆           ┆ /title/tt4 ┆     ┆ Waugh    ┆      ┆            ┆           │
+    │            ┆ tl...      ┆           ┆ 63...      ┆     ┆          ┆      ┆            ┆           │
+    │ 1676580320 ┆ https://ww ┆ The       ┆ https://ww ┆ ... ┆ Seth Mac ┆ 8.0  ┆ 90K        ┆ null      │
+    │ -52        ┆ w.imdb.com ┆ Orville   ┆ w.imdb.com ┆     ┆ Farlane  ┆      ┆            ┆           │
+    │            ┆ /search/ti ┆           ┆ /title/tt5 ┆     ┆          ┆      ┆            ┆           │
+    │            ┆ tl...      ┆           ┆ 69...      ┆     ┆          ┆      ┆            ┆           │
+    │ 1676580323 ┆ https://ww ┆ The       ┆ https://ww ┆ ... ┆ Matt     ┆ 9.7  ┆ 90K        ┆ null      │
+    │ -53        ┆ w.imdb.com ┆ Spoils of ┆ w.imdb.com ┆     ┆ Shakman  ┆      ┆            ┆           │
+    │            ┆ /search/ti ┆ War       ┆ /title/tt5 ┆     ┆          ┆      ┆            ┆           │
+    │            ┆ tl...      ┆           ┆ 77...      ┆     ┆          ┆      ┆            ┆           │
+    │ 1676580325 ┆ https://ww ┆ Game of   ┆ https://ww ┆ ... ┆ David    ┆ 9.2  ┆ 2.1M       ┆ null      │
+    │ -54        ┆ w.imdb.com ┆ Thrones   ┆ w.imdb.com ┆     ┆ Benioff  ┆      ┆            ┆           │
+    │            ┆ /search/ti ┆           ┆ /title/tt0 ┆     ┆          ┆      ┆            ┆           │
+    │            ┆ tl...      ┆           ┆ 94...      ┆     ┆          ┆      ┆            ┆           │
+    │ 1676580327 ┆ https://ww ┆ Atypical  ┆ https://ww ┆ ... ┆ Robia    ┆ 8.2  ┆ 92K        ┆ null      │
+    │ -55        ┆ w.imdb.com ┆           ┆ w.imdb.com ┆     ┆ Rashid   ┆      ┆            ┆           │
+    │            ┆ /search/ti ┆           ┆ /title/tt6 ┆     ┆          ┆      ┆            ┆           │
+    │            ┆ tl...      ┆           ┆ 31...      ┆     ┆          ┆      ┆            ┆           │
+    └────────────┴────────────┴───────────┴────────────┴─────┴──────────┴──────┴────────────┴───────────┘
+We can see the firsts columns don't present really relevent data. We can get all the headers using by running the following line:
+```python
+lf.columns
+```
+    ['web-scraper-order', 'web-scraper-start-url','films_items','films_items-href','Film_Title','Year','Realisator','Note','Number_of_views','Metascore']
+It confirms the first four columns aren't relevant data on our movies.  They can be easily ignored using the `.drop` method as stated earlier?
+```python
+lf = lf.drop("web-scraper-order", "web-scraper-start-url", "films_items", "films_items-href")
+lf.fetch(5)
+```
+    shape: (5, 6)
+    ┌───────────────────┬──────┬─────────────────┬──────┬─────────────────┬───────────┐
+    │ Film_Title        ┆ Year ┆ Realisator      ┆ Note ┆ Number_of_views ┆ Metascore │
+    │ ---               ┆ ---  ┆ ---             ┆ ---  ┆ ---             ┆ ---       │
+    │ str               ┆ str  ┆ str             ┆ f64  ┆ str             ┆ str       │
+    ╞═══════════════════╪══════╪═════════════════╪══════╪═════════════════╪═══════════╡
+    │ Shot Caller       ┆ 2017 ┆ Ric Roman Waugh ┆ 7.3  ┆ 89K             ┆ 59        │
+    │ The Orville       ┆ null ┆ Seth MacFarlane ┆ 8.0  ┆ 90K             ┆ null      │
+    │ The Spoils of War ┆ null ┆ Matt Shakman    ┆ 9.7  ┆ 90K             ┆ null      │
+    │ Game of Thrones   ┆ null ┆ David Benioff   ┆ 9.2  ┆ 2.1M            ┆ null      │
+    │ Atypical          ┆ null ┆ Robia Rashid    ┆ 8.2  ┆ 92K             ┆ null      │
+    └───────────────────┴──────┴─────────────────┴──────┴─────────────────┴───────────┘
+We'll always store our Lazyframe in the `lf` variable wull use the `.fetch` method to preview our result's. This preview show quite some `null` values in our frame. But being from a CSV file, we don't know if they are real missing value or `"null"`
+strings. A quick check on the matter can look something like this, selecting only the two suspicious columns we'll want to convert to more adequate types. if null strings are mixed with null values in the lazyframe
+```python
+lf.select(["Year", "Metascore"]).filter(pl.col("Year") == "null").fetch(5)
+```
+    shape: (5, 2)
+    ┌──────┬───────────┐
+    │ Year ┆ Metascore │
+    │ ---  ┆ ---       │
+    │ str  ┆ str       │
+    ╞══════╪═══════════╡
+    │ null ┆ null      │
+    │ null ┆ null      │
+    │ null ┆ null      │
+    │ null ┆ null      │
+    │ null ┆ null      │
+    └──────┴───────────┘
+There are some null strings in both of them that could throw errors strict on conversion. The `.cast` method used for it have a `strict` boolean attribute that allow us to ignore such errors and replace the problematic values by `null` but for the sake of the example, we'll modify them manually using this simple algorithm. It's good to know that `.otherwise` defaults to `null`, which is why I only specified the happy path.
+```python
+lf.with_columns(
+    pl.when(pl.col(pl.Utf8) != "null")
+    .then(pl.col(pl.Utf8))
+    .keep_name()
+    )
+lf.fetch(10)
+```
+    shape: (10, 10)
+    ┌────────────┬────────────┬───────────┬────────────┬─────┬──────────┬──────┬────────────┬───────────┐
+    │ web-scrape ┆ web-scrape ┆ films_ite ┆ films_item ┆ ... ┆ Realisat ┆ Note ┆ Number_of_ ┆ Metascore │
+    │ r-order    ┆ r-start-ur ┆ ms        ┆ s-href     ┆     ┆ or       ┆ ---  ┆ views      ┆ ---       │
+    │ ---        ┆ l          ┆ ---       ┆ ---        ┆     ┆ ---      ┆ f64  ┆ ---        ┆ str       │
+    │ str        ┆ ---        ┆ str       ┆ str        ┆     ┆ str      ┆      ┆ str        ┆           │
+    │            ┆ str        ┆           ┆            ┆     ┆          ┆      ┆            ┆           │
+    ╞════════════╪════════════╪═══════════╪════════════╪═════╪══════════╪══════╪════════════╪═══════════╡
+    │ 1676580318 ┆ https://ww ┆ Shot      ┆ https://ww ┆ ... ┆ Ric      ┆ 7.3  ┆ 89K        ┆ 59        │
+    │ -51        ┆ w.imdb.com ┆ Caller    ┆ w.imdb.com ┆     ┆ Roman    ┆      ┆            ┆           │
+    │            ┆ /search/ti ┆           ┆ /title/tt4 ┆     ┆ Waugh    ┆      ┆            ┆           │
+    │            ┆ tl...      ┆           ┆ 63...      ┆     ┆          ┆      ┆            ┆           │
+    │ 1676580320 ┆ https://ww ┆ The       ┆ https://ww ┆ ... ┆ Seth Mac ┆ 8.0  ┆ 90K        ┆ null      │
+    │ -52        ┆ w.imdb.com ┆ Orville   ┆ w.imdb.com ┆     ┆ Farlane  ┆      ┆            ┆           │
+    │            ┆ /search/ti ┆           ┆ /title/tt5 ┆     ┆          ┆      ┆            ┆           │
+    │            ┆ tl...      ┆           ┆ 69...      ┆     ┆          ┆      ┆            ┆           │
+    │ 1676580323 ┆ https://ww ┆ The       ┆ https://ww ┆ ... ┆ Matt     ┆ 9.7  ┆ 90K        ┆ null      │
+    │ -53        ┆ w.imdb.com ┆ Spoils of ┆ w.imdb.com ┆     ┆ Shakman  ┆      ┆            ┆           │
+    │            ┆ /search/ti ┆ War       ┆ /title/tt5 ┆     ┆          ┆      ┆            ┆           │
+    │            ┆ tl...      ┆           ┆ 77...      ┆     ┆          ┆      ┆            ┆           │
+    │ 1676580325 ┆ https://ww ┆ Game of   ┆ https://ww ┆ ... ┆ David    ┆ 9.2  ┆ 2.1M       ┆ null      │
+    │ -54        ┆ w.imdb.com ┆ Thrones   ┆ w.imdb.com ┆     ┆ Benioff  ┆      ┆            ┆           │
+    │            ┆ /search/ti ┆           ┆ /title/tt0 ┆     ┆          ┆      ┆            ┆           │
+    │            ┆ tl...      ┆           ┆ 94...      ┆     ┆          ┆      ┆            ┆           │
+    │ ...        ┆ ...        ┆ ...       ┆ ...        ┆ ... ┆ ...      ┆ ...  ┆ ...        ┆ ...       │
+    ...
+    │ 1676580338 ┆ https://ww ┆ The Babys ┆ https://ww ┆ ... ┆ McG      ┆ 6.3  ┆ 97K        ┆ null      │
+    │ -60        ┆ w.imdb.com ┆ itter     ┆ w.imdb.com ┆     ┆          ┆      ┆            ┆           │
+    │            ┆ /search/ti ┆           ┆ /title/tt4 ┆     ┆          ┆      ┆            ┆           │
+    │            ┆ tl...      ┆           ┆ 22...      ┆     ┆          ┆      ┆            ┆           │
+    └────────────┴────────────┴───────────┴────────────┴─────┴──────────┴──────┴────────────┴───────────┘
+We can now safely change our columns type to numerical ones, leaving the `strict` attribute default to one and we get no errors.
+```python
+lf = lf.with_columns([
+    pl.col("Year").cast(pl.UInt16).keep_name(),
+    pl.col("Note").cast(pl.Float32).keep_name(),
+    pl.col("Metascore").cast(pl.UInt8).keep_name(),
+    ])
+lf.collect().describe()
+```
+    shape: (7, 7)
+    ┌────────────┬────────────────┬────────┬──────────────┬──────────┬─────────────────┬───────────┐
+    │ describe   ┆ Film_Title     ┆ Year   ┆ Realisator   ┆ Note     ┆ Number_of_views ┆ Metascore │
+    │ ---        ┆ ---            ┆ ---    ┆ ---          ┆ ---      ┆ ---             ┆ ---       │
+    │ str        ┆ str            ┆ f64    ┆ str          ┆ f64      ┆ str             ┆ f64       │
+    ╞════════════╪════════════════╪════════╪══════════════╪══════════╪═════════════════╪═══════════╡
+    │ count      ┆ 101            ┆ 101.0  ┆ 101          ┆ 101.0    ┆ 101             ┆ 101.0     │
+    │ null_count ┆ 0              ┆ 22.0   ┆ 0            ┆ 0.0      ┆ 0               ┆ 24.0      │
+    │ mean       ┆ null           ┆ 2017.0 ┆ null         ┆ 7.154456 ┆ null            ┆ 64.61039  │
+    │ std        ┆ null           ┆ 0.0    ┆ null         ┆ 0.935791 ┆ null            ┆ 18.152248 │
+    │ min        ┆ 13 Reasons Why ┆ 0.0    ┆ Aaron Sorkin ┆ 4.6      ┆ 104K            ┆ 21.0      │
+    │ max        ┆ xXx: Return of ┆ 2017.0 ┆ Álex Pina    ┆ 9.7      ┆ 98K             ┆ 94.0      │
+    │            ┆ Xander Cage    ┆        ┆              ┆          ┆                 ┆           │
+    │ median     ┆ null           ┆ 2017.0 ┆ null         ┆ 7.3      ┆ null            ┆ 66.0      │
+    └────────────┴────────────────┴────────┴──────────────┴──────────┴─────────────────┴───────────┘
+After this successful operation, we can replace the missing values of the Year and Metascore columns with their respective mode.
+```python
+mod_col = ["Year", "Metascore"]
+lf = lf.with_columns([
+    pl.col(mod_col).fill_null(pl.col(mod_col).drop_nulls().mode()).keep_name(), 
+])
+lf.collect().describe()
+```
+    shape: (7, 7)
+    ┌────────────┬────────────────┬────────┬──────────────┬──────────┬─────────────────┬───────────┐
+    │ describe   ┆ Film_Title     ┆ Year   ┆ Realisator   ┆ Note     ┆ Number_of_views ┆ Metascore │
+    │ ---        ┆ ---            ┆ ---    ┆ ---          ┆ ---      ┆ ---             ┆ ---       │
+    │ str        ┆ str            ┆ f64    ┆ str          ┆ f64      ┆ str             ┆ f64       │
+    ╞════════════╪════════════════╪════════╪══════════════╪══════════╪═════════════════╪═══════════╡
+    │ count      ┆ 101            ┆ 101.0  ┆ 101          ┆ 101.0    ┆ 101             ┆ 101.0     │
+    │ null_count ┆ 0              ┆ 0.0    ┆ 0            ┆ 0.0      ┆ 0               ┆ 0.0       │
+    │ mean       ┆ null           ┆ 2017.0 ┆ null         ┆ 7.154456 ┆ null            ┆ 67.079208 │
+    │ std        ┆ null           ┆ 0.0    ┆ null         ┆ 0.935791 ┆ null            ┆ 16.43696  │
+    │ min        ┆ 13 Reasons Why ┆ 2017.0 ┆ Aaron Sorkin ┆ 4.6      ┆ 104K            ┆ 21.0      │
+    │ max        ┆ xXx: Return of ┆ 2017.0 ┆ Álex Pina    ┆ 9.7      ┆ 98K             ┆ 94.0      │
+    │            ┆ Xander Cage    ┆        ┆              ┆          ┆                 ┆           │
+    │ median     ┆ null           ┆ 2017.0 ┆ null         ┆ 7.3      ┆ null            ┆ 75.0      │
+    └────────────┴────────────────┴────────┴──────────────┴──────────┴─────────────────┴───────────┘
+We use `.drop_nulls` attribute to be sure to not get a `null` mode if it's the dominating value of the serie.
 
-# Data analysis use cases
+The next step us to compute the good number of views per movie with this little more complex algorithm. The `.replace` method accepts raw strings as regex expression and I used it to keep only the numeric part of the value. I multiplied in `Polars.map` by the corresponding power of 10 using the `.map_dict` method.
+```python
+mp = {'K':3, 'M':6}
+lf = lf.with_columns(
+    pl.col("Number_of_views").map(lambda x:
+        x.str.replace(r"K|M", "").cast(pl.Float32)*10**x.str.slice(-1).map_dict(mp)
+    ).keep_name(),
+)
+lf.fetch(5)
+```
+    shape: (5, 6)
+    ┌───────────────────┬──────┬─────────────────┬──────┬─────────────────┬───────────┐
+    │ Film_Title        ┆ Year ┆ Realisator      ┆ Note ┆ Number_of_views ┆ Metascore │
+    │ ---               ┆ ---  ┆ ---             ┆ ---  ┆ ---             ┆ ---       │
+    │ str               ┆ u16  ┆ str             ┆ f32  ┆ f64             ┆ u8        │
+    ╞═══════════════════╪══════╪═════════════════╪══════╪═════════════════╪═══════════╡
+    │ Shot Caller       ┆ 2017 ┆ Ric Roman Waugh ┆ 7.3  ┆ 89000.0         ┆ 59        │
+    │ The Orville       ┆ 2017 ┆ Seth MacFarlane ┆ 8.0  ┆ 90000.0         ┆ 59        │
+    │ The Spoils of War ┆ 2017 ┆ Matt Shakman    ┆ 9.7  ┆ 90000.0         ┆ 59        │
+    │ Game of Thrones   ┆ 2017 ┆ David Benioff   ┆ 9.2  ┆ 2.1000e6        ┆ 59        │
+    │ Atypical          ┆ 2017 ┆ Robia Rashid    ┆ 8.2  ┆ 92000.0         ┆ 59        │
+    └───────────────────┴──────┴─────────────────┴──────┴─────────────────┴───────────┘
+The final task is splitting the realisator name by splitting the string in an array, using the first element as it's first name using the array method `.first` and joining back the rest of the array as it could be of more than one element with the `.join` method. The `.suffix` method append the specified string to the selected column name.
+```python
+lf = lf.with_columns(
+    pl.col("Realisator").str.split(" ").arr.first().suffix("_first_name"),
+    pl.col("Realisator").str.split(" ").arr.slice(1).arr.join(" ").suffix("_last_name"),
+)
+lf.fetch(5)
+```
+    shape: (5, 8)
+    ┌──────────────┬──────┬──────────────┬──────┬────────────┬───────────┬──────────────┬──────────────┐
+    │ Film_Title   ┆ Year ┆ Realisator   ┆ Note ┆ Number_of_ ┆ Metascore ┆ Realisator_f ┆ Realisator_l │
+    │ ---          ┆ ---  ┆ ---          ┆ ---  ┆ views      ┆ ---       ┆ irst_name    ┆ ast_name     │
+    │ str          ┆ u16  ┆ str          ┆ f32  ┆ ---        ┆ u8        ┆ ---          ┆ ---          │
+    │              ┆      ┆              ┆      ┆ f64        ┆           ┆ str          ┆ str          │
+    ╞══════════════╪══════╪══════════════╪══════╪════════════╪═══════════╪══════════════╪══════════════╡
+    │ Shot Caller  ┆ 2017 ┆ Ric Roman    ┆ 7.3  ┆ 89000.0    ┆ 59        ┆ Ric          ┆ Roman Waugh  │
+    │              ┆      ┆ Waugh        ┆      ┆            ┆           ┆              ┆              │
+    │ The Orville  ┆ 2017 ┆ Seth         ┆ 8.0  ┆ 90000.0    ┆ 59        ┆ Seth         ┆ MacFarlane   │
+    │              ┆      ┆ MacFarlane   ┆      ┆            ┆           ┆              ┆              │
+    │ The Spoils   ┆ 2017 ┆ Matt Shakman ┆ 9.7  ┆ 90000.0    ┆ 59        ┆ Matt         ┆ Shakman      │
+    │ of War       ┆      ┆              ┆      ┆            ┆           ┆              ┆              │
+    │ Game of      ┆ 2017 ┆ David        ┆ 9.2  ┆ 2.1000e6   ┆ 59        ┆ David        ┆ Benioff      │
+    │ Thrones      ┆      ┆ Benioff      ┆      ┆            ┆           ┆              ┆              │
+    │ Atypical     ┆ 2017 ┆ Robia Rashid ┆ 8.2  ┆ 92000.0    ┆ 59        ┆ Robia        ┆ Rashid       │
+    └──────────────┴──────┴──────────────┴──────┴────────────┴───────────┴──────────────┴──────────────┘
+We can reorder our columns using the `.select` method and providing a list of column name. The `.sample` method allow us to look at 5 random lines of our data more global view of the effecgt of our transformation without loading it all.
+```python
+lf.select(["Film_Title","Year","Realisator_first_name","Realisator_last_name","Note","Number_of_views","Metascore"]).collect().sample(n=5)
+```
+We can finally save our clean data using the `.write_csv` method on our Dataframe (obtained after using `.collect` on out Lazyframe if you havent forget) and we're done.
+
+# Alternatives
+There are several other tools with similar functionality as Polars. A few examples are :
+- Pandas is the most known tool that lose a lot of steam on data larger than RAM. Other tools built upon it to parallelize it's workload but with less sucess.
+-Dask is one of them. Falls short as it act as a black box hacking it's way through the limitation of it's foundation.
+-DuckDB have a lot of similarities with Polars but is more focused on providing a good embedded database alternative than being an efficient Dataframe library.
 
 # Conclusion
 
