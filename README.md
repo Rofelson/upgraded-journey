@@ -412,5 +412,13 @@ There are several other tools with similar functionality as Polars. A few exampl
 -DuckDB have a lot of similarities with Polars but is more focused on providing a good embedded database alternative than being an efficient Dataframe library.
 
 # Conclusion
+Polars is pretty solid tool for parallel data computing and is especially solid on large datasets. Using it the designed way makes it a really easy to build a whole query step by step, debugging it by looking at a few rows of data at a time.
+It might not look at blazingly fast and is restricting you to the use of it's method for a more efficient optimization but is really designed with care.
 
-# Sources
+#### Sources
+* [Polars user-guide](https://pola-rs.github.io/polars-book/user-guide/introduction.html)
+* [Polars API reference](https://pola-rs.github.io/polars/py-polars/html/reference/index.html)
+* [Polars github](https://github.com/pola-rs/polars/blob/master/README.md)
+* [10 things I hate about Pandas](https://wesmckinney.com/blog/apache-arrow-pandas-internals/)
+* [Apache Arrow Overview](https://arrow.apache.org/overview/)
+* [A gentle introduction to Apache Arrow](https://towardsdatascience.com/a-gentle-introduction-to-apache-arrow-with-apache-spark-and-pandas-bb19ffe0ddae)
