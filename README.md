@@ -404,6 +404,20 @@ We can reorder our columns using the `.select` method and providing a list of co
 ```python
 lf.select(["Film_Title","Year","Realisator_first_name","Realisator_last_name","Note","Number_of_views","Metascore"]).collect().sample(n=5)
 ```
+    shape: (5, 7)
+    ┌──────────────────┬──────┬─────────────────┬─────────────────┬──────┬─────────────────┬───────────┐
+    │ Film_Title       ┆ Year ┆ Realisator_firs ┆ Realisator_last ┆ Note ┆ Number_of_views ┆ Metascore │
+    │ ---              ┆ ---  ┆ t_name          ┆ _name           ┆ ---  ┆ ---             ┆ ---       │
+    │ str              ┆ u16  ┆ ---             ┆ ---             ┆ f32  ┆ f64             ┆ u8        │
+    │                  ┆      ┆ str             ┆ str             ┆      ┆                 ┆           │
+    ╞══════════════════╪══════╪═════════════════╪═════════════════╪══════╪═════════════════╪═══════════╡
+    │ Taboo            ┆ 2017 ┆ Chips           ┆ Hardy           ┆ 8.3  ┆ 141000.0        ┆ 75        │
+    │ Baywatch         ┆ 2017 ┆ Seth            ┆ Gordon          ┆ 5.5  ┆ 190000.0        ┆ 37        │
+    │ Downsizing       ┆ 2017 ┆ Alexander       ┆ Payne           ┆ 5.8  ┆ 114000.0        ┆ 63        │
+    │ Ghost in the     ┆ 2017 ┆ Rupert          ┆ Sanders         ┆ 6.3  ┆ 218000.0        ┆ 52        │
+    │ Shell            ┆      ┆                 ┆                 ┆      ┆                 ┆           │
+    │ Despicable Me 3  ┆ 2017 ┆ Kyle            ┆ Balda           ┆ 6.2  ┆ 139000.0        ┆ 49        │
+    └──────────────────┴──────┴─────────────────┴─────────────────┴──────┴─────────────────┴───────────┘
 We can finally save our clean data using the `.write_csv` method on our Dataframe (obtained after using `.collect` on out Lazyframe if you havent forget) and we're done.
 
 # Alternatives
