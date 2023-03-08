@@ -1,6 +1,7 @@
 ![DIT](./img/Logo.png)
 
 # Polars : a blazingly fast dataframe library
+![Polars](./img/polars.svg)
 Two languages have made a big impression on the lasts stackoverflow's most loved survey: the rapidly rising **Elixir** and the dominating **Rust**. As the first one is developping as a python-like functionnal language for resilient and highly concurrent systems, the second is getting a lot of traction in type safe, fast and reliable systems.
 
 When the functionnal pythonic Elixir got it's own NumPy (multi-dimensional arrays), it chose the shiny rust based framework for it's backend : Polars.
@@ -413,7 +414,13 @@ There are several other tools with similar functionality as Polars. A few exampl
 
 # Conclusion
 Polars is pretty solid tool for parallel data computing and is especially solid on large datasets. Using it the designed way makes it a really easy to build a whole query step by step, debugging it by looking at a few rows of data at a time.
-It might not look at blazingly fast and is restricting you to the use of it's method for a more efficient optimization but is really designed with care.
+
+It might not look at blazingly fast on smaller datasets (a parrallel computing issue) and is restricting you to the use of it's method for a more efficient optimization but is really designed with care. 
+
+It also allows us to get a look at our quety graph when we're done, enabling refactoring and a better vision on larger projects.
+![query graph](./img/lf_graph.png).
+
+Definitely a good tool to have on your belt.
 
 #### Sources
 * [Polars user-guide](https://pola-rs.github.io/polars-book/user-guide/introduction.html)
