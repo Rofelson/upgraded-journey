@@ -431,7 +431,8 @@ Polars is pretty solid tool for parallel data computing and is especially solid 
 
 It might not look at blazingly fast on smaller datasets (a parrallel computing issue) and is restricting you to the use of it's method for a more efficient optimization but is really designed with care. 
 
-It also allows us to get a look at our quety graph when we're done, enabling refactoring and a better vision on larger projects.
+It also allows us to get a look at our query graph (with the `.show_graph()` method)when we're done, enabling refactoring and a better vision on larger projects.
+
 ![query graph](./img/lf_graph.png).
 
 Definitely a good tool to have on your belt.
